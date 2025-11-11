@@ -8,3 +8,5 @@
 !.yarn/releases
 !.yarn/versions
 
+.env
+.env*
