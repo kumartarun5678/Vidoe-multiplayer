@@ -1,0 +1,41 @@
+import { Request, Response } from 'express';
+import { gridService } from '../services/grid.service.ts';
+import { validationService } from '../middleware/validation.middleware.ts';
+import asyncHandler from '../utils/async.handler.ts';
+import ApiResponse from '../utils/api.response.ts';
+import ApiError from '../utils/api.error.ts';
+
+export const gridController = {
+    getGridState: asyncHandler(async (req: Request, res: Response) => {
+        const gridState = await gridService.getGridState();
+        res.json(
+            new ApiResponse(200, "Grid fetched successfully", true, gridState)
+        );
+    }),
+
+    updateCell: asyncHandler(async (req: Request, res: Response) => {
+        const { x, y, char, sessionId } = req.body;
+        const validation = validationService.validateCellUpdate(x, y, char, sessionId);
+        if (!validation.isValid) {
+            return res.status(400).json(
+                new ApiError(400, validation.error, [validation])
+            );
+        }
+
+        const updateResult = gridService.updateCell(x, y, char, sessionId);
+        if (!updateResult.success) {
+            return res.status(400).json(
+                new ApiError(400, updateResult.error, [updateResult])
+            );
+        }
+
+        res.json(updateResult);
+    }),
+
+    resetGrid: asyncHandler(async (req: Request, res: Response) => {
+        gridService.resetGrid();
+        res.json(
+            new ApiResponse(200, "Grid reset successfully", true)
+        );
+    })
+};

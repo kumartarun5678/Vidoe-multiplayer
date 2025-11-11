@@ -1,18 +1,44 @@
-import express from "express";
-import cors from "cors";
-import "dotenv/config";
-import cookieParser from "cookie-parser";
+import express from 'express';
+import http from 'http';
+import cors from 'cors';
+import 'dotenv/config';
+import { Server as SocketIOServer } from 'socket.io';
+import { setupSocketHandlers } from './utils/socket.ts';
+
 
 const app = express();
+const server = http.createServer(app);
+
+const io = new SocketIOServer(server, {
+  cors: {
+    origin: process.env.CORS_ORIGIN,
+    methods: ["GET", "POST"]
+  }
+});
 
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || '*',
-    credentials: true,
+    origin: process.env.CORS_ORIGIN,
+    credentials: true
 }));
+app.use(express.json());
 
-app.use(express.json(({limit: '10mb'})));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(express.static('public'));
-app.use(cookieParser());
+// Routes
+import { gridRoutes, playerRoutes, historyRoutes } from "./routes/index.ts";
 
-export default app;
+app.use('/api/v1/grid', gridRoutes);
+app.use('/api/v1/players', playerRoutes);
+app.use('/api/v1/history', historyRoutes);
+
+app.get('/api/v1/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+setupSocketHandlers(io);
+
+const PORT = process.env.PORT || 8000;
+
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+export { app, io };
