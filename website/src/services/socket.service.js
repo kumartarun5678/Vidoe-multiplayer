@@ -10,7 +10,7 @@ class SocketService {
   connect() {
     if (this.socket) return;
 
-    this.socket = io(SOCKET_URL || 'http://localhost:3001', {
+    this.socket = io(SOCKET_URL, {
       transports: ['websocket']
     });
 

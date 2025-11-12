@@ -1,9 +1,10 @@
-import { Link} from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // eslint-disable-next-line no-unused-vars
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const dropdownToggleRef = useRef(null);
@@ -38,7 +39,6 @@ export default function Navbar() {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-
   return (
     <nav className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-50">
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
@@ -53,8 +53,6 @@ export default function Navbar() {
             {/* <div className="flex space-x-6">
               <NavLink to="#about">About</NavLink>
             </div> */}
-
-           
           </div>
 
           <div className="lg:hidden mt-4 flex items-center">
@@ -63,7 +61,11 @@ export default function Navbar() {
               className="text-gray-700 hover:text-[#387cf9] p-2 focus:outline-none"
               aria-label="Toggle menu"
             >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </button>
           </div>
         </div>
@@ -81,7 +83,7 @@ export default function Navbar() {
     </nav>
   );
 }
-
+ // eslint-disable-next-line no-unused-vars
 const NavLink = ({ to, children }) => (
   <Link
     to={to}
@@ -91,6 +93,7 @@ const NavLink = ({ to, children }) => (
   </Link>
 );
 
+ // eslint-disable-next-line no-unused-vars
 const MobileNavLink = ({ to, children, onClick }) => (
   <Link
     to={to}

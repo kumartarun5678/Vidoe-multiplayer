@@ -1,5 +1,5 @@
-export const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:8000';
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+export const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'https://multiplayer-backend-jzxk.onrender.com';
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://multiplayer-backend-jzxk.onrender.com/api';
 
 export const SOCKET_EVENTS = {
   // Client to Server

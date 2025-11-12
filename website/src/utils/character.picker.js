@@ -5,17 +5,6 @@ const CharacterPicker = () => {
   const { selectedCell, handleCharacterSelect, handleClosePicker } = useGrid();
   const [customChar, setCustomChar] = useState('');
 
-  const popularEmojis = [
-    '😀', '😂', '🥰', '😎', '🤩', '😍', '🔥', '⭐', '🌟', '✨',
-    '🎉', '🎊', '💯', '❤️', '💕', '💪', '👏', '🙌', '🚀', '🌈',
-    '🐱', '🐶', '🦄', '🐉', '🌺', '🌸', '🍕', '🎮', '📚', '🎵',
-    '⚡', '💡', '🔑', '🎨', '⚽', '🎸', '🏆', '💎', '👑', '🎭'
-  ];
-
-  const handleEmojiClick = (emoji) => {
-    handleCharacterSelect(emoji);
-  };
-
   const handleCustomSubmit = (e) => {
     e.preventDefault();
     if (customChar && customChar.length === 1) {
