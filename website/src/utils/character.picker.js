@@ -52,7 +52,7 @@ const CharacterPicker = () => {
         </div>
 
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          {/* <h3 className="text-lg font-semibold text-gray-800 mb-4">
             Popular Emojis
           </h3>
           <div className="grid grid-cols-8 gap-2 mb-6">
@@ -65,7 +65,7 @@ const CharacterPicker = () => {
                 {emoji}
               </button>
             ))}
-          </div>
+          </div> */}
 
           <div className="border-t pt-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-3">

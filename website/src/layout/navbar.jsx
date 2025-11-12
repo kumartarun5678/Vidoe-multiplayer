@@ -50,9 +50,9 @@ export default function Navbar() {
           </div>
 
           <div className="hidden lg:flex items-center mt-4 space-x-8">
-            <div className="flex space-x-6">
+            {/* <div className="flex space-x-6">
               <NavLink to="#about">About</NavLink>
-            </div>
+            </div> */}
 
            
           </div>
@@ -71,9 +71,9 @@ export default function Navbar() {
         {isMenuOpen && (
           <div className="lg:hidden bg-white border-t border-gray-100">
             <div className="flex flex-col items-center space-y-4 py-4 px-4">
-              <MobileNavLink to="/#about" onClick={toggleMenu}>
+              {/* <MobileNavLink to="/#about" onClick={toggleMenu}>
                 About
-              </MobileNavLink>
+              </MobileNavLink> */}
             </div>
           </div>
         )}
