@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node index.ts",
-    "dev": "nodemon --watch './**/*.ts' --ext 'ts,json' --exec 'ts-node index.ts'",
+    "dev": "nodemon --watch './**/*.ts' --ext 'ts,json' --exec 'node --loader ts-node/esm index.ts'",
     "vercel-build": "tsc"
   },
   "author": "Tarun Kumar",
