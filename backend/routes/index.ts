@@ -1,5 +1,5 @@
-import { gridRoutes } from "./grid.routes.ts";
-import { playerRoutes } from "./player.routes.ts";
-import { historyRoutes } from "./history.routes.ts";
+import { gridRoutes } from "./grid.routes.js";
+import { playerRoutes } from "./player.routes.js";
+import { historyRoutes } from "./history.routes.js";
 
 export { gridRoutes, playerRoutes, historyRoutes };

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { playerController } from '../controllers/palyer.controller.ts';
+import { playerController } from '../controllers/palyer.controller.js';
 
 const router = Router();
 

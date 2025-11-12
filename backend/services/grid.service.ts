@@ -1,8 +1,8 @@
-import { GridModel } from '../models/grid.model.ts';
-import { playerService } from './player.service.ts';
-import { historyService } from './history.service.ts';
-import { io } from '../app.ts';
-import type { RecordUpdate } from '../interface/history.interface.ts';
+import { GridModel } from '../models/grid.model.js';
+import { playerService } from './player.service.js';
+import { historyService } from './history.service.js';
+import { io } from '../app.js';
+import type { RecordUpdate } from '../interface/history.interface.js';
 
 class GridService {
     private gridModel: GridModel;

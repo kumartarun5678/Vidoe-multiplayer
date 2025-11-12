@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { historyService } from '../services/history.service.ts';
-import ApiResponse from '../utils/api.response.ts';
-import ApiError from '../utils/api.error.ts';
+import { historyService } from '../services/history.service.js';
+import ApiResponse from '../utils/api.response.js';
+import ApiError from '../utils/api.error.js';
 
 const router = Router();
 

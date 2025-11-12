@@ -1,7 +1,7 @@
 import { Server as SocketIOServer } from 'socket.io';
-import { playerService } from '../services/player.service.ts';
-import { gridService } from '../services/grid.service.ts';
-import { SOCKET_EVENTS } from '../constants.ts';
+import { playerService } from '../services/player.service.js';
+import { gridService } from '../services/grid.service.js';
+import { SOCKET_EVENTS } from '../constants.js';
 
 export const setupSocketHandlers = (io: SocketIOServer) => {
   io.on('connection', (socket) => {

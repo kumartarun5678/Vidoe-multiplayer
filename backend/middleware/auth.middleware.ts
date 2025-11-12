@@ -1,5 +1,5 @@
 
-import { playerService } from '../services/player.service.ts';
+import { playerService } from '../services/player.service.js';
 
 export const sessionValidation = (req: any, res: any, next: any) => {
   const sessionId = req.headers['x-session-id'] || req.body.sessionId;

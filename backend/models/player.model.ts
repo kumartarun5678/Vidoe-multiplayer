@@ -1,5 +1,5 @@
-import { PlayerSession } from '../interface/player.interface.ts';
-import { SESSION_TIMEOUT, COOLDOWN_DURATION } from '../constants.ts';
+import { PlayerSession } from '../interface/player.interface.js';
+import { SESSION_TIMEOUT, COOLDOWN_DURATION } from '../constants.js';
 
 export class PlayerModel {
   private sessions: Map<string, PlayerSession> = new Map();

@@ -1,5 +1,5 @@
-import { HistoryModel } from '../models/history.model.ts';
-import { GridUpdate, RecordUpdate } from '../interface/history.interface.ts';
+import { HistoryModel } from '../models/history.model.js';
+import { GridUpdate, RecordUpdate } from '../interface/history.interface.js';
 
 class HistoryService {
   private historyModel: HistoryModel;

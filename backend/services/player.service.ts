@@ -1,5 +1,5 @@
-import { PlayerModel } from '../models/player.model.ts';
-import { io } from '../app.ts';
+import { PlayerModel } from '../models/player.model.js';
+import { io } from '../app.js';
 
 class PlayerService {
   private playerModel: PlayerModel;

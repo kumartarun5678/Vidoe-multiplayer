@@ -1,5 +1,5 @@
-import { Cell, GridState } from '../interface/grid.interface.ts';
-import { GRID_SIZE } from '../constants.ts';
+import { Cell, GridState } from '../interface/grid.interface.js';
+import { GRID_SIZE } from '../constants.js';
 
 export class GridModel {
     private grid: GridState;

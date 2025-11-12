@@ -1,5 +1,5 @@
-import { GridUpdate, GroupedUpdate, RecordUpdate } from '../interface/history.interface.ts';
-import { GROUPING_WINDOW } from '../constants.ts';
+import { GridUpdate, GroupedUpdate, RecordUpdate } from '../interface/history.interface.js';
+import { GROUPING_WINDOW } from '../constants.js';
 
 export class HistoryModel {
     private history: GridUpdate[] = [];

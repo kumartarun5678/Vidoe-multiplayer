@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { gridController } from '../controllers/grid.controller.ts';
-import { sessionValidation } from '../middleware/auth.middleware.ts';
+import { gridController } from '../controllers/grid.controller.js';
+import { sessionValidation } from '../middleware/auth.middleware.js';
 
 const router = Router();
 

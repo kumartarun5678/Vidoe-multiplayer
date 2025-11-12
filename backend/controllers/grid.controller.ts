@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { gridService } from '../services/grid.service.ts';
-import { validationService } from '../middleware/validation.middleware.ts';
-import asyncHandler from '../utils/async.handler.ts';
-import ApiResponse from '../utils/api.response.ts';
-import ApiError from '../utils/api.error.ts';
+import { gridService } from '../services/grid.service.js';
+import { validationService } from '../middleware/validation.middleware.js';
+import asyncHandler from '../utils/async.handler.js';
+import ApiResponse from '../utils/api.response.js';
+import ApiError from '../utils/api.error.js';
 
 export const gridController = {
     getGridState: asyncHandler(async (req: Request, res: Response) => {

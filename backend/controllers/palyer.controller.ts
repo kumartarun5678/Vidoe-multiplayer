@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { playerService } from '../services/player.service.ts';
+import { playerService } from '../services/player.service.js';
 
 export const playerController = {
   getOnlineCount: (req: Request, res: Response) => {

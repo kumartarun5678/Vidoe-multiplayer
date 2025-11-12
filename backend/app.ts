@@ -3,7 +3,7 @@ import http from 'http';
 import cors from 'cors';
 import 'dotenv/config';
 import { Server as SocketIOServer } from 'socket.io';
-import { setupSocketHandlers } from './utils/socket.ts';
+import { setupSocketHandlers } from './utils/socket.js';
 
 
 const app = express();
@@ -23,7 +23,7 @@ app.use(cors({
 app.use(express.json());
 
 // Routes
-import { gridRoutes, playerRoutes, historyRoutes } from "./routes/index.ts";
+import { gridRoutes, playerRoutes, historyRoutes } from "./routes/index.js";
 
 app.use('/api/v1/grid', gridRoutes);
 app.use('/api/v1/players', playerRoutes);
