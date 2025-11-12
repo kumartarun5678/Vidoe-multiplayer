@@ -4,18 +4,20 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "start": "node dist/index.js",
     "dev": "nodemon --watch './**/*.ts' --ext 'ts,json' --exec 'node --loader ts-node/esm index.ts'",
-    "build": "tsc"
+    "postinstall": "yarn add @types/node",
+    "build": "tsc",
+    "start": "node dist/index.js"
   },
   "author": "Tarun Kumar",
   "license": "ISC",
   "description": "this is test project",
   "dependencies": {
+    "@types/node": "^24.10.1",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.5",
-    "@types/node": "^24.10.1",
+    "@types/socket.io": "^3.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
