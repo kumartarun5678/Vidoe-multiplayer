@@ -9,6 +9,7 @@
     "strict": true,
     "skipLibCheck": true,
     "allowImportingTsExtensions": true,
+    "noImplicitAny": false,
     "noEmit": true
   },
   "include": ["./**/*.ts"],
