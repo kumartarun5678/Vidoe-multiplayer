@@ -69,8 +69,7 @@ npm start
 
 Access the App
 
-Frontend: http://localhost:3000
-
+Frontend: https://tarun-web-multiplayer.vercel.app
 Backend: https://multiplayer-backend-jzxk.onrender.com
 
 🤖 AI Tools Usage Declaration
