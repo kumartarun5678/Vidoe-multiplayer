@@ -19,35 +19,62 @@ export const PlayerProvider = ({ children }) => {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const lastProcessedUpdateRef = useRef(null);
+  const timerIntervalRef = useRef(null);
+  const hasInitializedRef = useRef(false);
+  const lastCooldownStartRef = useRef(0);
 
   const resetCooldownState = useCallback(() => {
     setHasSubmitted(false);
     setCooldownEnd(null);
     setTimeRemaining(0);
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
   }, []);
 
-  const startCooldown = useCallback((durationMs) => {
+  const startCooldown = useCallback((durationMs, source = 'unknown') => {
+    const now = Date.now();
+    if (now - lastCooldownStartRef.current < 1000) {
+      return;
+    }
+    
+    lastCooldownStartRef.current = now;
     
     if (!durationMs || durationMs <= 0) {
       resetCooldownState();
       return;
     }
 
-    setHasSubmitted(true);
-    const endTime = new Date(Date.now() + durationMs);
+    const endTime = new Date(now + durationMs);
     const timeRemainingSeconds = Math.ceil(durationMs / 1000);
     
+    setHasSubmitted(true);
     setCooldownEnd(endTime);
     setTimeRemaining(timeRemainingSeconds);
     
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
+    
+    timerIntervalRef.current = setInterval(() => {
+      const currentTime = Date.now();
+      const remaining = endTime.getTime() - currentTime;
+      
+      if (remaining <= 0) {
+        resetCooldownState();
+      } else {
+        setTimeRemaining(Math.ceil(remaining / 1000));
+      }
+    }, 1000);
+    
   }, [resetCooldownState]);
 
-  const syncCooldownFromBackend = useCallback(async (preserveOptimistic = false) => {
+  const syncCooldownFromBackend = useCallback(async () => {
     if (!sessionId) {
       setIsLoading(false);
       return;
     }
-
 
     try {
       const response = await apiService.getSessionStatus(sessionId);
@@ -55,114 +82,89 @@ export const PlayerProvider = ({ children }) => {
       if (response.success) {
         const { canUpdate, timeRemaining: backendTimeRemaining } = response.data.canUpdate;
         
-        if (!canUpdate && backendTimeRemaining) {
-          const durationMs = typeof backendTimeRemaining === 'number' && backendTimeRemaining < 1000
-            ? backendTimeRemaining * 1000
-            : backendTimeRemaining;
-          console.log('Player Updating to backend cooldown:', durationMs, 'ms');
-          startCooldown(durationMs);
-        } else if (canUpdate) {
-          if (preserveOptimistic && hasSubmitted && cooldownEnd) {
-            const optimisticRemaining = cooldownEnd.getTime() - Date.now();
-            if (optimisticRemaining > 0) {
-              setTimeout(() => {
-                syncCooldownFromBackend(false);
-              }, 300);
-              return;
-            }
-          }
-          if (!preserveOptimistic || !hasSubmitted) {
-            resetCooldownState();
-          } else {
-            console.log('Player Keeping optimistic cooldown (preserveOptimistic && hasSubmitted)');
-          }
+        if (!canUpdate && backendTimeRemaining > 0) {
+          const durationMs = backendTimeRemaining < 1000 ? backendTimeRemaining * 1000 : backendTimeRemaining;
+          console.log('⏳ Player Backend has active cooldown:', durationMs, 'ms');
+          startCooldown(durationMs, 'backend-sync');
+        } else {
+          resetCooldownState();
         }
+      } else {
+        resetCooldownState();
       }
     } catch (error) {
-      console.error('Player Failed to sync cooldown from backend:', error);
+      resetCooldownState();
     } finally {
       setIsLoading(false);
     }
-  }, [sessionId, startCooldown, resetCooldownState, hasSubmitted, cooldownEnd]);
+  }, [sessionId, startCooldown, resetCooldownState]);
 
   useEffect(() => {
-    if (sessionId) {
+    if (sessionId && !hasInitializedRef.current) {
+      hasInitializedRef.current = true;
       syncCooldownFromBackend();
+    } else if (!sessionId) {
+      hasInitializedRef.current = false;
+      resetCooldownState();
+      setIsLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId]); 
+  }, [sessionId, syncCooldownFromBackend, resetCooldownState]);
 
   useEffect(() => {
-    lastProcessedUpdateRef.current = null;
-  }, [sessionId]);
+    if (!sessionId || !cooldownStatus || hasInitializedRef.current === false) return;
 
-
-  useEffect(() => {
-    if (!cooldownEnd) return;
-
-    const interval = setInterval(() => {
-      const now = new Date();
-      const remaining = cooldownEnd - now;
-
-      if (remaining <= 0) {
-        resetCooldownState();
-        clearInterval(interval);
+    if (!cooldownStatus.canUpdate && cooldownStatus.timeRemaining > 0) {
+      const durationMs = cooldownStatus.timeRemaining < 1000 
+        ? cooldownStatus.timeRemaining * 1000 
+        : cooldownStatus.timeRemaining;
+      
+      if (!hasSubmitted || timeRemaining <= 5) { 
+        startCooldown(durationMs, 'websocket');
       } else {
-        setTimeRemaining(Math.floor(remaining / 1000));
       }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [cooldownEnd, resetCooldownState]);
+    } else if (cooldownStatus.canUpdate && hasSubmitted) {
+      console.log('Player WebSocket indicates can update, but keeping state for consistency');
+      
+    }
+  }, [sessionId, cooldownStatus, startCooldown, hasSubmitted, timeRemaining]);
 
   useEffect(() => {
     if (!sessionId || !updates?.length) return;
 
     const playerUpdate = updates.find(update => update.sessionId === sessionId);
-    if (!playerUpdate) {
-      return;
-    }
-    const updateId = `${playerUpdate.x}_${playerUpdate.y}_${playerUpdate.char}_${playerUpdate.sessionId}`;
+    if (!playerUpdate) return;
+    
+    const updateId = `${playerUpdate.x}_${playerUpdate.y}_${playerUpdate.char}_${playerUpdate.timestamp || Date.now()}`;
     
     if (lastProcessedUpdateRef.current === updateId) {
       return;
     }
 
-    console.log('Player Update received for our session:', playerUpdate);
     lastProcessedUpdateRef.current = updateId;
-    const timeoutId = setTimeout(() => {
-      syncCooldownFromBackend(true);
-    }, 500); 
     
-    return () => clearTimeout(timeoutId);
+    setTimeout(() => {
+      syncCooldownFromBackend();
+    }, 500);
+    
   }, [sessionId, updates, syncCooldownFromBackend]);
 
   useEffect(() => {
-    if (!sessionId || !cooldownStatus) return;
+    if (!hasSubmitted || !sessionId) return;
 
-    if (!cooldownStatus.canUpdate) {
-      const remainingMs = typeof cooldownStatus.timeRemaining === 'number'
-        ? cooldownStatus.timeRemaining
-        : cooldownStatus.cooldownEnd
-          ? new Date(cooldownStatus.cooldownEnd).getTime() - Date.now()
-          : null;
+    const syncInterval = setInterval(() => {
+      syncCooldownFromBackend();
+    }, 30000);
 
-      if (remainingMs && remainingMs > 0) {
-        startCooldown(remainingMs);
+    return () => clearInterval(syncInterval);
+  }, [hasSubmitted, sessionId, syncCooldownFromBackend]);
+
+  useEffect(() => {
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
       }
-    } else if (cooldownStatus.canUpdate) {
-      if (hasSubmitted && cooldownEnd) {
-        const optimisticRemaining = cooldownEnd.getTime() - Date.now();
-        if (optimisticRemaining > 0) {
-          return;
-        } else {
-          resetCooldownState();
-        }
-      } else if (!hasSubmitted) {
-        console.log('Player Backend says canUpdate and no active cooldown - state is correct');
-      }
-    }
-  }, [sessionId, cooldownStatus, startCooldown, resetCooldownState, hasSubmitted, cooldownEnd]);
+    };
+  }, []);
 
   const canUpdate = !hasSubmitted || timeRemaining <= 0;
 
