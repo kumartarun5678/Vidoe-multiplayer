@@ -3,7 +3,7 @@ import { usePlayer } from '../../hooks/use.player.hook';
 
 const Timer = () => {
   const { hasSubmitted, timeRemaining } = usePlayer();
-
+  
   if (!hasSubmitted || timeRemaining <= 0) {
     return null;
   }

@@ -18,8 +18,16 @@ export const WebSocketProvider = ({ children }) => {
   const [gridState, setGridState] = useState(null);
   const [playerCount, setPlayerCount] = useState(0);
   const [updates, setUpdates] = useState([]);
+  const [cooldownStatus, setCooldownStatus] = useState(null);
 
   useEffect(() => {
+      const savedSessionId = localStorage.getItem('sessionId');
+  
+  socketService.connect({
+    auth: {
+      sessionId: savedSessionId
+    }
+  });
     socketService.connect();
     const handleConnect = () => setIsConnected(true);
     const handleDisconnect = () => setIsConnected(false);
@@ -28,6 +36,7 @@ export const WebSocketProvider = ({ children }) => {
       setSessionId(data.sessionId);
       setGridState(data.gridState);
       setPlayerCount(data.playerCount);
+      setCooldownStatus(data.cooldownStatus || null);
       localStorage.setItem('sessionId', data.sessionId);
     };
 
@@ -44,13 +53,17 @@ export const WebSocketProvider = ({ children }) => {
       setPlayerCount(data.data.count);
     };
 
+    const handleCooldownStatus = (data) => {
+      setCooldownStatus(data);
+    };
+
     socketService.on('connect', handleConnect);
     socketService.on('disconnect', handleDisconnect);
     socketService.on(SOCKET_EVENTS.SESSION_CREATED, handleSessionCreated);
     socketService.on(SOCKET_EVENTS.GRID_UPDATED, handleGridUpdated);
     socketService.on(SOCKET_EVENTS.PLAYER_COUNT_UPDATE, handlePlayerCountUpdate);
+    socketService.on(SOCKET_EVENTS.COOLDOWN_STATUS, handleCooldownStatus);
 
-    const savedSessionId = localStorage.getItem('sessionId');
     if (savedSessionId) {
       socketService.emit(SOCKET_EVENTS.CHECK_STATUS, { sessionId: savedSessionId });
     }
@@ -61,8 +74,14 @@ export const WebSocketProvider = ({ children }) => {
       socketService.off(SOCKET_EVENTS.SESSION_CREATED, handleSessionCreated);
       socketService.off(SOCKET_EVENTS.GRID_UPDATED, handleGridUpdated);
       socketService.off(SOCKET_EVENTS.PLAYER_COUNT_UPDATE, handlePlayerCountUpdate);
+      socketService.off(SOCKET_EVENTS.COOLDOWN_STATUS, handleCooldownStatus);
     };
   }, []);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    socketService.emit(SOCKET_EVENTS.GET_COOLDOWN_STATUS, { sessionId });
+  }, [sessionId]);
 
   const updateCell = (x, y, char) => {
     if (!sessionId) return;
@@ -78,6 +97,7 @@ export const WebSocketProvider = ({ children }) => {
     gridState,
     playerCount,
     updates,
+    cooldownStatus,
     updateCell
   };
 

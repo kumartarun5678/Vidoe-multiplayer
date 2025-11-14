@@ -93,9 +93,26 @@ export class PlayerModel {
     return session ? this.sessions.delete(session.sessionId) : false;
   }
 
+  detachSessionByConnection(connectionId: string): boolean {
+    for (const session of this.sessions.values()) {
+      if (session.connectionId === connectionId) {
+        session.connectionId = null;
+        session.lastActivity = new Date();
+        return true;
+      }
+    }
+    return false;
+  }
+
   getOnlineCount(): number {
     this.cleanupExpiredSessions();
-    return this.sessions.size;
+    let count = 0;
+    for (const session of this.sessions.values()) {
+      if (session.connectionId) {
+        count++;
+      }
+    }
+    return count;
   }
 
   getAllSessions(): PlayerSession[] {

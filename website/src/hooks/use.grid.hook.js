@@ -50,7 +50,8 @@ export const GridProvider = ({ children }) => {
     selectedCell,
     showCharacterPicker,
     handleCharacterSelect,
-    handleClosePicker
+    handleClosePicker,
+    sessionId
   };
 
   return (

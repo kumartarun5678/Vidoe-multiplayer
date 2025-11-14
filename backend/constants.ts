@@ -14,5 +14,7 @@ export const SOCKET_EVENTS = {
   UPDATE_SUCCESS: 'update_success',
   UPDATE_FAILED: 'update_failed',
   STATUS_UPDATE: 'status_update',
+  GET_COOLDOWN_STATUS: 'get_cooldown_status',
+  COOLDOWN_STATUS: 'cooldown_status',
   ERROR: 'error'
 } ;

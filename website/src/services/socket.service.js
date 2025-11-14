@@ -6,13 +6,14 @@ class SocketService {
     this.socket = null;
     this.listeners = new Map();
   }
-
-  connect() {
+  connect(options = {}) {
     if (this.socket) return;
 
     this.socket = io(SOCKET_URL, {
-      transports: ['websocket']
+      transports: ['websocket'],
+      auth: options.auth || {}
     });
+
 
     this.socket.onAny((event, data) => {
       const eventListeners = this.listeners.get(event);

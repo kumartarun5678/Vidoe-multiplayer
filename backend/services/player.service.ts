@@ -4,7 +4,7 @@ import { io } from '../app.js';
 class PlayerService {
   private playerModel: PlayerModel;
 
-  constructor() {
+  constructor () {
     this.playerModel = new PlayerModel();
   }
 
@@ -15,6 +15,17 @@ class PlayerService {
   }
 
   removeSession(connectionId: string) {
+    const session = this.playerModel.getSessionByConnection(connectionId);
+    const hasActiveCooldown = session?.hasSubmitted &&
+      session.cooldownUntil &&
+      new Date() < session.cooldownUntil;
+
+    if (hasActiveCooldown && session) {
+      this.playerModel.detachSessionByConnection(connectionId);
+      this.broadcastPlayerCount();
+      return false;
+    }
+
     const success = this.playerModel.removeSessionByConnection(connectionId);
     if (success) {
       this.broadcastPlayerCount();
@@ -50,7 +61,7 @@ class PlayerService {
   getSessionStatus(sessionId: string) {
     const session = this.getSession(sessionId);
     const canUpdate = this.canUpdate(sessionId);
-    
+
     return {
       session,
       canUpdate
@@ -74,12 +85,41 @@ class PlayerService {
       const previousCount = this.getOnlineCount();
       this.playerModel.getOnlineCount();
       const newCount = this.getOnlineCount();
-      
+
       if (previousCount !== newCount) {
         this.broadcastPlayerCount();
       }
-    }, 60000); 
+    }, 60000);
   }
+  getCooldownStatus(sessionId: string): {
+    canUpdate: boolean;
+    timeRemaining?: number;
+    cooldownEnd?: Date;
+  } {
+    const session = this.playerModel.getSession(sessionId);
+
+    if (!session) {
+      return { canUpdate: true };
+    }
+    if (session.hasSubmitted && session.cooldownUntil) {
+      const now = new Date();
+      if (now < session.cooldownUntil) {
+        const timeRemaining = session.cooldownUntil.getTime() - now.getTime();
+        return {
+          canUpdate: false,
+          timeRemaining,
+          cooldownEnd: session.cooldownUntil
+        };
+      } else {
+        session.hasSubmitted = false;
+        session.cooldownUntil = undefined;
+        return { canUpdate: true };
+      }
+    }
+
+    return { canUpdate: true };
+  }
+
 }
 
 export const playerService = new PlayerService();

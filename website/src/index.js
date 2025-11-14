@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
 import Navbar from "./layout/navbar";
+    import { ToastContainer } from 'react-toastify';
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
@@ -11,6 +12,7 @@ root.render(
     <BrowserRouter>
     <Navbar/>
       <App />
+      <ToastContainer position="top-center"/>
     </BrowserRouter>
   </React.StrictMode>
 );
