@@ -1,49 +1,59 @@
 import { HistoryModel } from '../models/history.model.js';
 import { GridUpdate, RecordUpdate } from '../interface/history.interface.js';
 
+const DEFAULT_ROOM_ID = 'room-1';
+
 class HistoryService {
-  private historyModel: HistoryModel;
+  private historyModels: Map<string, HistoryModel>;
 
   constructor() {
-    this.historyModel = new HistoryModel();
+    this.historyModels = new Map();
   }
 
-  recordUpdate(x: number, y: number, previousChar: string, char: string, sessionId: string, updateData: RecordUpdate): GridUpdate {
-    return this.historyModel.recordUpdate(updateData);
+  private getHistory(roomId: string = DEFAULT_ROOM_ID): HistoryModel {
+    if (!this.historyModels.has(roomId)) {
+      this.historyModels.set(roomId, new HistoryModel(roomId));
+    }
+    return this.historyModels.get(roomId)!;
   }
 
-  getUpdates() {
-    return this.historyModel.getUpdates();
+  recordUpdate(roomId: string, updateData: RecordUpdate): GridUpdate {
+    return this.getHistory(roomId).recordUpdate(updateData);
   }
 
-  getUpdatesSince(timestamp: Date) {
-    return this.historyModel.getUpdatesSince(timestamp);
+  getUpdates(roomId?: string) {
+    return this.getHistory(roomId).getUpdates();
   }
 
-  getGroupedUpdates() {
-    return this.historyModel.getGroupedUpdates();
+  getUpdatesSince(timestamp: Date, roomId?: string) {
+    return this.getHistory(roomId).getUpdatesSince(timestamp);
   }
 
-  getTimeline() {
-    return this.historyModel.getTimeline();
+  getGroupedUpdates(roomId?: string) {
+    return this.getHistory(roomId).getGroupedUpdates();
   }
 
-  getStats() {
-    return this.historyModel.getStats();
+  getTimeline(roomId?: string) {
+    return this.getHistory(roomId).getTimeline();
   }
 
-  recordGridReset() {
-    this.historyModel.recordUpdate({
+  getStats(roomId?: string) {
+    return this.getHistory(roomId).getStats();
+  }
+
+  recordGridReset(roomId?: string) {
+    this.getHistory(roomId).recordUpdate({
       x: -1,
       y: -1,
       previousChar: 'GRID_RESET',
       newChar: 'GRID_RESET',
-      sessionId: 'system'
+      sessionId: 'system',
+      roomId: roomId || DEFAULT_ROOM_ID
     });
   }
 
-  clearHistory() {
-    this.historyModel.clearHistory();
+  clearHistory(roomId?: string) {
+    this.getHistory(roomId).clearHistory();
   }
 }
 

@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { useWebSocket } from './use.web.socket.hook';
 import { apiService } from '../services/api.service';
-import { COOLDOWN_DURATION } from '../utils/constants';
 
 const PlayerContext = createContext();
 
@@ -28,6 +27,7 @@ export const PlayerProvider = ({ children }) => {
   }, []);
 
   const startCooldown = useCallback((durationMs) => {
+    
     if (!durationMs || durationMs <= 0) {
       resetCooldownState();
       return;
@@ -35,38 +35,62 @@ export const PlayerProvider = ({ children }) => {
 
     setHasSubmitted(true);
     const endTime = new Date(Date.now() + durationMs);
+    const timeRemainingSeconds = Math.ceil(durationMs / 1000);
+    
     setCooldownEnd(endTime);
-    setTimeRemaining(Math.ceil(durationMs / 1000));
+    setTimeRemaining(timeRemainingSeconds);
+    
   }, [resetCooldownState]);
 
-  useEffect(() => {
-    const syncCooldownFromBackend = async () => {
-      if (!sessionId) {
-        setIsLoading(false);
-        return;
-      }
+  const syncCooldownFromBackend = useCallback(async (preserveOptimistic = false) => {
+    if (!sessionId) {
+      setIsLoading(false);
+      return;
+    }
 
-      try {
-        const response = await apiService.getSessionStatus(sessionId);
+
+    try {
+      const response = await apiService.getSessionStatus(sessionId);
+      
+      if (response.success) {
+        const { canUpdate, timeRemaining: backendTimeRemaining } = response.data.canUpdate;
         
-        if (response.success) {
-          const { canUpdate, timeRemaining: backendTimeRemaining } = response.data.canUpdate;
-          
-          if (!canUpdate && backendTimeRemaining) {
-            startCooldown(backendTimeRemaining);
-          } else {
+        if (!canUpdate && backendTimeRemaining) {
+          const durationMs = typeof backendTimeRemaining === 'number' && backendTimeRemaining < 1000
+            ? backendTimeRemaining * 1000
+            : backendTimeRemaining;
+          console.log('Player Updating to backend cooldown:', durationMs, 'ms');
+          startCooldown(durationMs);
+        } else if (canUpdate) {
+          if (preserveOptimistic && hasSubmitted && cooldownEnd) {
+            const optimisticRemaining = cooldownEnd.getTime() - Date.now();
+            if (optimisticRemaining > 0) {
+              setTimeout(() => {
+                syncCooldownFromBackend(false);
+              }, 300);
+              return;
+            }
+          }
+          if (!preserveOptimistic || !hasSubmitted) {
             resetCooldownState();
+          } else {
+            console.log('Player Keeping optimistic cooldown (preserveOptimistic && hasSubmitted)');
           }
         }
-      } catch (error) {
-        console.error('Failed to sync cooldown from backend:', error);
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('Player Failed to sync cooldown from backend:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [sessionId, startCooldown, resetCooldownState, hasSubmitted, cooldownEnd]);
 
-    syncCooldownFromBackend();
-  }, [sessionId, startCooldown, resetCooldownState]);
+  useEffect(() => {
+    if (sessionId) {
+      syncCooldownFromBackend();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]); 
 
   useEffect(() => {
     lastProcessedUpdateRef.current = null;
@@ -95,14 +119,23 @@ export const PlayerProvider = ({ children }) => {
     if (!sessionId || !updates?.length) return;
 
     const playerUpdate = updates.find(update => update.sessionId === sessionId);
-    if (!playerUpdate || lastProcessedUpdateRef.current === playerUpdate) {
+    if (!playerUpdate) {
+      return;
+    }
+    const updateId = `${playerUpdate.x}_${playerUpdate.y}_${playerUpdate.char}_${playerUpdate.sessionId}`;
+    
+    if (lastProcessedUpdateRef.current === updateId) {
       return;
     }
 
-    lastProcessedUpdateRef.current = playerUpdate;
+    console.log('Player Update received for our session:', playerUpdate);
+    lastProcessedUpdateRef.current = updateId;
+    const timeoutId = setTimeout(() => {
+      syncCooldownFromBackend(true);
+    }, 500); 
     
-    startCooldown(COOLDOWN_DURATION);
-  }, [sessionId, updates, startCooldown]);
+    return () => clearTimeout(timeoutId);
+  }, [sessionId, updates, syncCooldownFromBackend]);
 
   useEffect(() => {
     if (!sessionId || !cooldownStatus) return;
@@ -117,10 +150,19 @@ export const PlayerProvider = ({ children }) => {
       if (remainingMs && remainingMs > 0) {
         startCooldown(remainingMs);
       }
-    } else if (hasSubmitted) {
-      resetCooldownState();
+    } else if (cooldownStatus.canUpdate) {
+      if (hasSubmitted && cooldownEnd) {
+        const optimisticRemaining = cooldownEnd.getTime() - Date.now();
+        if (optimisticRemaining > 0) {
+          return;
+        } else {
+          resetCooldownState();
+        }
+      } else if (!hasSubmitted) {
+        console.log('Player Backend says canUpdate and no active cooldown - state is correct');
+      }
     }
-  }, [sessionId, cooldownStatus, startCooldown, resetCooldownState, hasSubmitted]);
+  }, [sessionId, cooldownStatus, startCooldown, resetCooldownState, hasSubmitted, cooldownEnd]);
 
   const canUpdate = !hasSubmitted || timeRemaining <= 0;
 
@@ -130,7 +172,9 @@ export const PlayerProvider = ({ children }) => {
     cooldownEnd,
     timeRemaining,
     canUpdate,
-    isLoading
+    isLoading,
+    startCooldown,
+    syncCooldownFromBackend
   };
 
   return (

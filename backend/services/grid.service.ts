@@ -4,18 +4,37 @@ import { historyService } from './history.service.js';
 import { io } from '../app.js';
 import type { RecordUpdate } from '../interface/history.interface.js';
 
+const DEFAULT_ROOM_ID = 'room-1';
+
 class GridService {
-    private gridModel: GridModel;
+    private grids: Map<string, GridModel>;
 
     constructor () {
-        this.gridModel = new GridModel();
+        this.grids = new Map();
     }
 
-    getGridState() {
-        return this.gridModel.getGridState();
+    private getOrCreateGrid(roomId: string): GridModel {
+        if (!this.grids.has(roomId)) {
+            this.grids.set(roomId, new GridModel());
+        }
+        return this.grids.get(roomId)!;
+    }
+
+    getGridState(roomId: string = DEFAULT_ROOM_ID) {
+        return this.getOrCreateGrid(roomId).getGridState();
     }
 
     updateCell(x: number, y: number, char: string, sessionId: string) {
+        const session = playerService.getSession(sessionId);
+        if (!session) {
+            return {
+                success: false,
+                error: 'Session not found',
+                reason: 'session_not_found'
+            };
+        }
+
+        const roomId = session.roomId || DEFAULT_ROOM_ID;
         const canUpdate = playerService.canUpdate(sessionId);
         if (!canUpdate.canUpdate) {
             return {
@@ -26,9 +45,10 @@ class GridService {
             };
         }
 
-        const currentCell = this.gridModel.getCell(x, y);
+        const grid = this.getOrCreateGrid(roomId);
+        const currentCell = grid.getCell(x, y);
         const previousChar = currentCell?.char || ' ';
-        const success = this.gridModel.updateCell(x, y, char, sessionId);
+        const success = grid.updateCell(x, y, char, sessionId);
         if (!success) {
             return {
                 success: false,
@@ -41,16 +61,18 @@ class GridService {
             previousChar,
             newChar: char,
             sessionId,
+            roomId
         };
 
-        historyService.recordUpdate(x, y, previousChar, char, sessionId, updateData);
+        historyService.recordUpdate(roomId, updateData);
         playerService.markSubmitted(sessionId);
-        const gridState = this.getGridState();
-        io.emit('grid_updated', {
+        const gridState = this.getGridState(roomId);
+        io.to(roomId).emit('grid_updated', {
             type: 'cell_update',
             data: {
                 x, y, char, sessionId,
-                gridState
+                gridState,
+                roomId
             }
         });
 
@@ -58,25 +80,26 @@ class GridService {
             success: true,
             data: {
                 x, y, char,
-                gridState
+                gridState,
+                roomId
             }
         };
     }
 
-    resetGrid() {
-        this.gridModel.resetGrid();
+    resetGrid(roomId: string = DEFAULT_ROOM_ID) {
+        this.getOrCreateGrid(roomId).resetGrid();
 
-        const gridState = this.getGridState();
-        io.emit('grid_updated', {
+        const gridState = this.getGridState(roomId);
+        io.to(roomId).emit('grid_updated', {
             type: 'grid_reset',
-            data: { gridState }
+            data: { gridState, roomId }
         });
 
-        historyService.recordGridReset();
+        historyService.recordGridReset(roomId);
     }
 
     getGridSize() {
-        return this.gridModel.getGridSize();
+        return GridModel.GRID_SIZE;
     }
 }
 

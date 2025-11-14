@@ -5,6 +5,7 @@ export interface GridUpdate {
     previousChar: string;
     newChar: string;
     sessionId: string;
+    roomId: string;
     timestamp: Date;
 }
 
@@ -27,5 +28,6 @@ export interface RecordUpdate {
     y: number,
     previousChar: string,
     newChar: string,
-    sessionId: string
+    sessionId: string,
+    roomId: string
 }

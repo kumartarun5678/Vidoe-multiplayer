@@ -1,3 +1,9 @@
+const numberFromEnv = (value, fallback) => {
+  if (!value) return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
 export const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'https://multiplayer-backend-jzxk.onrender.com';
 export const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://multiplayer-backend-jzxk.onrender.com/api';
 
@@ -18,5 +24,5 @@ export const SOCKET_EVENTS = {
   ERROR: 'error'
 };
 
-export const GRID_SIZE = 10;
-export const COOLDOWN_DURATION = 60000; // 1 minute
+export const GRID_SIZE = numberFromEnv(process.env.REACT_APP_GRID_SIZE, 10);
+export const COOLDOWN_DURATION = numberFromEnv(process.env.REACT_APP_COOLDOWN_DURATION_MS, 60000); // 1 minute

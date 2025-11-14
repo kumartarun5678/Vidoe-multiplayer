@@ -6,12 +6,13 @@ export class PlayerModel {
   private readonly SESSION_TIMEOUT = SESSION_TIMEOUT;
   private readonly COOLDOWN_DURATION = COOLDOWN_DURATION;
 
-  createSession(connectionId: string): PlayerSession {
+  createSession(connectionId: string, roomId: string): PlayerSession {
     const sessionId = this.generateSessionId();
     
     const session: PlayerSession = {
       sessionId,
       connectionId,
+      roomId,
       hasSubmitted: false,
       lastActivity: new Date(),
       createdAt: new Date()
@@ -118,6 +119,20 @@ export class PlayerModel {
   getAllSessions(): PlayerSession[] {
     this.cleanupExpiredSessions();
     return Array.from(this.sessions.values());
+  }
+
+  getActiveRoomCounts(): Map<string, number> {
+    this.cleanupExpiredSessions();
+    const counts = new Map<string, number>();
+    for (const session of this.sessions.values()) {
+      if (!session.connectionId) continue;
+      counts.set(session.roomId, (counts.get(session.roomId) || 0) + 1);
+    }
+    return counts;
+  }
+
+  getActiveCountForRoom(roomId: string): number {
+    return this.getActiveRoomCounts().get(roomId) || 0;
   }
 
   private generateSessionId(): string {

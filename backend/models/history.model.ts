@@ -1,10 +1,19 @@
 import { GridUpdate, GroupedUpdate, RecordUpdate } from '../interface/history.interface.js';
 import { GROUPING_WINDOW } from '../constants.js';
+import { redisClient } from '../utils/redis.client.js';
 
 export class HistoryModel {
     private history: GridUpdate[] = [];
     private groupedUpdates: GroupedUpdate[] = [];
     private readonly GROUPING_WINDOW = GROUPING_WINDOW;
+    private readonly HISTORY_CACHE_KEY: string;
+    private readonly roomId: string;
+
+    constructor(roomId: string) {
+        this.roomId = roomId;
+        this.HISTORY_CACHE_KEY = `grid:${roomId}:history`;
+        this.initializeFromCache();
+    }
 
     recordUpdate(updateData: RecordUpdate): GridUpdate {
         const { x, y, previousChar, newChar, sessionId } = updateData;
@@ -16,18 +25,19 @@ export class HistoryModel {
             previousChar,
             newChar,
             sessionId,
+            roomId: this.roomId,
             timestamp: new Date(),
         };
 
         this.history.push(update);
         this.groupUpdates();
+        void this.persistHistory();
 
         return update;
     }
 
-
     getUpdates(): GridUpdate[] {
-        return [...this.history]; 
+        return [...this.history];
     }
 
     getUpdatesSince(timestamp: Date): GridUpdate[] {
@@ -80,6 +90,7 @@ export class HistoryModel {
     clearHistory(): void {
         this.history = [];
         this.groupedUpdates = [];
+        void this.persistHistory();
     }
 
     getStats() {
@@ -98,16 +109,42 @@ export class HistoryModel {
         };
     }
 
-    private groupUpdates(): void {
-        const now = new Date();
-        const recentUpdates = this.history.filter(
-            update => now.getTime() - update.timestamp.getTime() <= this.GROUPING_WINDOW
-        );
+    private async initializeFromCache() {
+        if (!redisClient) return;
+        try {
+            const serializedHistory = await redisClient.get(this.HISTORY_CACHE_KEY);
+            if (!serializedHistory) {
+                return;
+            }
+            const parsedHistory: GridUpdate[] = JSON.parse(serializedHistory).map((entry: GridUpdate) => ({
+                ...entry,
+                timestamp: new Date(entry.timestamp),
+            }));
+            this.history = parsedHistory;
+            this.groupUpdates();
+        } catch (error) {
+            console.error('[HistoryModel] Failed to hydrate history from Redis:', error);
+        }
+    }
 
-        if (recentUpdates.length === 0) return;
-        const groups: Map<number, GridUpdate[]> = new Map(); 
+    private async persistHistory() {
+        if (!redisClient) return;
+        try {
+            await redisClient.set(this.HISTORY_CACHE_KEY, JSON.stringify(this.history));
+        } catch (error) {
+            console.error('[HistoryModel] Failed to persist history to Redis:', error);
+        }
+    }
 
-        for (const update of recentUpdates) {
+    private groupUpdates(updatesToGroup: GridUpdate[] = this.history): void {
+        if (!updatesToGroup.length) {
+            this.groupedUpdates = [];
+            return;
+        }
+
+        const groups: Map<number, GridUpdate[]> = new Map();
+
+        for (const update of updatesToGroup) {
             const groupKey = Math.floor(update.timestamp.getTime() / this.GROUPING_WINDOW) * this.GROUPING_WINDOW;
 
             if (!groups.has(groupKey)) {

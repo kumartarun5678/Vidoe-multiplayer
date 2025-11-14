@@ -5,9 +5,15 @@ import asyncHandler from '../utils/async.handler.js';
 import ApiResponse from '../utils/api.response.js';
 import ApiError from '../utils/api.error.js';
 
+const resolveRoomId = (req: Request) => {
+    const room = typeof req.query.roomId === 'string' && req.query.roomId.trim() ? req.query.roomId : undefined;
+    return room || 'room-1';
+};
+
 export const gridController = {
     getGridState: asyncHandler(async (req: Request, res: Response) => {
-        const gridState = await gridService.getGridState();
+        const roomId = resolveRoomId(req);
+        const gridState = gridService.getGridState(roomId);
         res.json(
             new ApiResponse(200, "Grid fetched successfully", true, gridState)
         );
@@ -33,7 +39,7 @@ export const gridController = {
     }),
 
     resetGrid: asyncHandler(async (req: Request, res: Response) => {
-        gridService.resetGrid();
+        gridService.resetGrid(resolveRoomId(req));
         res.json(
             new ApiResponse(200, "Grid reset successfully", true)
         );

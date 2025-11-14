@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useCallback, useState } from 'react';
 import { useWebSocket } from './use.web.socket.hook';
+import { usePlayer } from './use.player.hook';
+import { COOLDOWN_DURATION } from '../utils/constants';
 import CharacterPicker from '../utils/character.picker'
 
 const GridContext = createContext();
@@ -13,24 +15,42 @@ export const useGrid = () => {
 };
 
 export const GridProvider = ({ children }) => {
-  const { gridState, updateCell, sessionId } = useWebSocket();
+  const { gridState, updateCell, sessionId, roomId } = useWebSocket();
+  const { canUpdate, startCooldown, isLoading } = usePlayer();
   const [selectedCell, setSelectedCell] = useState(null);
   const [showCharacterPicker, setShowCharacterPicker] = useState(false);
 
-  const handleCellClick = useCallback((x, y, currentChar) => {
+  const handleCellClick = useCallback((x, y, currentChar, canUpdateCell) => {
     if (!sessionId) return;
+    
+    if (canUpdateCell === false) {
+      return false; 
+    }
 
     setSelectedCell({ x, y, currentChar });
     setShowCharacterPicker(true);
+    return true;
   }, [sessionId]);
 
   const handleCharacterSelect = useCallback((char) => {
-    if (!selectedCell) return;
+    if (!selectedCell) return false;
+    
+    if (!canUpdate || isLoading) {
+      console.log('[Grid] Cannot update - canUpdate:', canUpdate, 'isLoading:', isLoading);
+      return false;
+    }
 
+    console.log('[Grid] Submitting character:', char, 'at cell:', selectedCell.x, selectedCell.y);
+    
     updateCell(selectedCell.x, selectedCell.y, char);
+    
+    console.log('[Grid] Starting optimistic cooldown:', COOLDOWN_DURATION, 'ms');
+    startCooldown(COOLDOWN_DURATION);
+    
     setShowCharacterPicker(false);
     setSelectedCell(null);
-  }, [selectedCell, updateCell]);
+    return true;
+  }, [selectedCell, updateCell, canUpdate, isLoading, startCooldown]);
 
   const handleClosePicker = useCallback(() => {
     setShowCharacterPicker(false);
@@ -51,7 +71,10 @@ export const GridProvider = ({ children }) => {
     showCharacterPicker,
     handleCharacterSelect,
     handleClosePicker,
-    sessionId
+    sessionId,
+    roomId,
+    canUpdate,
+    isLoading
   };
 
   return (

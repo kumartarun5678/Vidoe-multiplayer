@@ -23,13 +23,16 @@ export const setupSocketHandlers = (io: SocketIOServer) => {
       session = playerService.createSession(socket.id);
     }
 
+    socket.join(session.roomId);
+
     const cooldownStatus = playerService.getCooldownStatus(session.sessionId);
 
     socket.emit(SOCKET_EVENTS.SESSION_CREATED, {
       sessionId: session.sessionId,
-      gridState: gridService.getGridState(),
+      gridState: gridService.getGridState(session.roomId),
       playerCount: playerService.getOnlineCount(),
-      cooldownStatus: cooldownStatus
+      cooldownStatus: cooldownStatus,
+      roomId: session.roomId
     });
 
     socket.on(SOCKET_EVENTS.GET_COOLDOWN_STATUS, (data) => {

@@ -1,6 +1,9 @@
 import { PlayerModel } from '../models/player.model.js';
 import { io } from '../app.js';
 
+const ROOM_CAPACITY = 10;
+const ROOM_PREFIX = 'room';
+
 class PlayerService {
   private playerModel: PlayerModel;
 
@@ -8,8 +11,9 @@ class PlayerService {
     this.playerModel = new PlayerModel();
   }
 
-  createSession(connectionId: string) {
-    const session = this.playerModel.createSession(connectionId);
+  createSession(connectionId: string, roomId?: string) {
+    const targetRoom = roomId || this.getAvailableRoomId();
+    const session = this.playerModel.createSession(connectionId, targetRoom);
     this.broadcastPlayerCount();
     return session;
   }
@@ -118,6 +122,15 @@ class PlayerService {
     }
 
     return { canUpdate: true };
+  }
+
+  getAvailableRoomId(): string {
+    const counts = this.playerModel.getActiveRoomCounts();
+    let roomIndex = 1;
+    while ((counts.get(`${ROOM_PREFIX}-${roomIndex}`) || 0) >= ROOM_CAPACITY) {
+      roomIndex++;
+    }
+    return `${ROOM_PREFIX}-${roomIndex}`;
   }
 
 }
